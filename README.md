@@ -16,6 +16,15 @@ A simple Django project to manage spare parts, dealers, and orders.
 * Django REST Framework
 * SQLite (default) or any other database
 
+## Environment Variables
+
+Create a .env file in the project root directory with the following variables:
+
+SECRET_KEY=your-secret-key  
+DEBUG=True
+
+These variables are required to run this Django application.
+
 ## Installation
 
 1. Clone the project:
