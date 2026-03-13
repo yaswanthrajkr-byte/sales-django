@@ -1,0 +1,44 @@
+# Python cache
+pycache/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Database (local only)
+db.sqlite3
+*.sqlite3
+
+# Logs
+*.log
+
+# VSCode / IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python build files
+build/
+dist/
+*.egg-info/
+
+# Coverage / testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Static files (if generated)
+staticfiles/
+
+# Media uploads
+media/
