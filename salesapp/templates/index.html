@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YS SPARE PARTS — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c10; --surface: #111318; --surface2: #181c24; --surface3: #1f232e;
+            --border: rgba(255,255,255,0.07); --accent: #e8a020; --accent2: #f0c060;
+            --blue: #3b82f6; --red: #ef4444; --green: #22c55e;
+            --text: #f0f2f5; --muted: #6b7280; --muted2: #9ca3af;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px; height:600px; background:radial-gradient(circle,rgba(232,160,32,0.07) 0%,transparent 70%); pointer-events:none; z-index:0; }
+        body::after { content:''; position:fixed; bottom:-150px; right:-150px; width:500px; height:500px; background:radial-gradient(circle,rgba(59,130,246,0.06) 0%,transparent 70%); pointer-events:none; z-index:0; }
+        .header { position:sticky; top:0; z-index:100; background:rgba(10,12,16,0.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+        .logo { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; letter-spacing:2px; text-transform:uppercase; display:flex; align-items:center; gap:10px; }
+        .logo-icon { width:32px; height:32px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+        .logo span { color:var(--accent); }
+        .header-right { display:flex; align-items:center; gap:20px; }
+        .header-time { font-size:12px; color:var(--muted); font-weight:400; letter-spacing:0.5px; }
+        .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--green)}50%{box-shadow:0 0 16px var(--green)} }
+        .main { position:relative; z-index:1; padding:40px 40px 60px; max-width:1400px; margin:0 auto; }
+        .page-header { margin-bottom:36px; display:flex; justify-content:space-between; align-items:flex-end; }
+        .page-title { font-family:'Syne',sans-serif; font-size:30px; font-weight:700; letter-spacing:-0.5px; }
+        .page-title span { color:var(--accent); }
+        .page-subtitle { font-size:13px; color:var(--muted); margin-top:4px; }
+        .refresh-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted2); padding:9px 18px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; display:flex; gap:7px; align-items:center; transition:all 0.2s; width:auto; }
+        .refresh-btn:hover { background:var(--surface3); color:var(--text); border-color:rgba(255,255,255,0.15); transform:none; }
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:36px; }
+        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:22px 24px; position:relative; overflow:hidden; transition:all 0.3s; animation:fadeUp 0.6s ease both; }
+        .stat-card:nth-child(1){animation-delay:0.05s}.stat-card:nth-child(2){animation-delay:0.1s}.stat-card:nth-child(3){animation-delay:0.15s}.stat-card:nth-child(4){animation-delay:0.2s}
+        .stat-card:hover { border-color:rgba(232,160,32,0.25); background:var(--surface2); transform:translateY(-2px); }
+        .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent),transparent); opacity:0; transition:0.3s; }
+        .stat-card:hover::after { opacity:1; }
+        .stat-label { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); margin-bottom:10px; }
+        .stat-value { font-family:'Syne',sans-serif; font-size:36px; font-weight:700; color:var(--text); line-height:1; }
+        .stat-value.accent { color:var(--accent); }
+        .stat-icon { position:absolute; top:20px; right:20px; width:36px; height:36px; border-radius:8px; background:rgba(232,160,32,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; }
+        .dashboard-grid { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; gap:20px; }
+        .panel { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; animation:fadeUp 0.6s ease both; transition:border-color 0.3s; }
+        .panel:hover { border-color:rgba(255,255,255,0.12); }
+        .panel:nth-child(1){animation-delay:0.25s}.panel:nth-child(2){animation-delay:0.3s}.panel:nth-child(3){animation-delay:0.35s}.panel:nth-child(4){animation-delay:0.4s}
+        .panel-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .panel-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:600; letter-spacing:0.3px; }
+        .panel-badge { font-size:11px; font-weight:500; padding:3px 10px; border-radius:20px; background:rgba(232,160,32,0.12); color:var(--accent2); border:1px solid rgba(232,160,32,0.2); }
+        .panel-body { padding:20px 24px; }
+        .product-list { list-style:none; display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; }
+        .product-list::-webkit-scrollbar{width:4px}.product-list::-webkit-scrollbar-track{background:transparent}.product-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+        .product-item { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; transition:all 0.2s; }
+        .product-item:hover { background:var(--surface3); border-color:rgba(232,160,32,0.2); transform:translateX(3px); }
+        .product-name { font-size:13px; font-weight:500; color:var(--text); }
+        .product-price { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; color:var(--accent); }
+        .form-group { margin-bottom:14px; }
+        .form-label { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:6px; display:block; }
+        select,input { width:100%; padding:11px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s,box-shadow 0.2s; -webkit-appearance:none; appearance:none; margin:0; }
+        select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:36px; cursor:pointer; }
+        select option { background:#1f232e; }
+        input:focus,select:focus { border-color:rgba(232,160,32,0.5); box-shadow:0 0 0 3px rgba(232,160,32,0.08); }
+        input::placeholder { color:var(--muted); }
+        .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+        button { padding:11px 16px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; letter-spacing:0.2px; width:100%; }
+        .btn-secondary { background:var(--surface2); color:var(--muted2); border:1px solid var(--border); }
+        .btn-secondary:hover { background:var(--surface3); color:var(--text); transform:none; }
+        .btn-primary { background:var(--accent); color:#0a0c10; font-weight:600; }
+        .btn-primary:hover { background:var(--accent2); transform:none; box-shadow:0 4px 20px rgba(232,160,32,0.3); }
+        .item-list { list-style:none; display:flex; flex-direction:column; gap:8px; max-height:240px; overflow-y:auto; }
+        .item-list::-webkit-scrollbar{width:4px}.item-list::-webkit-scrollbar-track{background:transparent}.item-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+        .cart-item { display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; transition:all 0.2s; animation:slideIn 0.25s ease; }
+        @keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+        .cart-item:hover { border-color:rgba(255,255,255,0.1); }
+        .cart-item-info { display:flex; flex-direction:column; gap:2px; }
+        .cart-item-name { font-size:13px; font-weight:500; }
+        .cart-item-qty { font-size:11px; color:var(--muted); }
+        .delete-btn { background:transparent; border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:500; cursor:pointer; width:auto; transition:all 0.2s; }
+        .delete-btn:hover { background:rgba(239,68,68,0.1); border-color:#ef4444; transform:none; }
+        .order-item { display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; gap:8px; }
+        .order-num { font-family:'Syne',sans-serif; font-size:12px; font-weight:600; color:var(--muted); min-width:46px; }
+        .order-status { font-size:11px; font-weight:500; padding:4px 10px; border-radius:12px; text-transform:capitalize; background:rgba(34,197,94,0.1); color:var(--green); flex-shrink:0; }
+        .order-status.draft { background:rgba(59,130,246,0.1); color:var(--blue); }
+        .order-status.confirmed { background:rgba(232,160,32,0.1); color:var(--accent2); }
+        .order-confirm-btn { background:var(--accent); color:#0a0c10; border:none; padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s; width:auto; }
+        .order-confirm-btn:hover { background:var(--accent2); box-shadow:0 2px 8px rgba(232,160,32,0.3); }
+        .order-deliver-btn { background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s; width:auto; }
+        .order-deliver-btn:hover { background:rgba(34,197,94,0.25); border-color:rgba(34,197,94,0.5); }
+
+        /* ── EDIT BUTTON ── */
+        .order-edit-btn {
+            background: rgba(59,130,246,0.1);
+            color: var(--blue);
+            border: 1px solid rgba(59,130,246,0.28);
+            padding: 5px 11px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            width: auto;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .order-edit-btn:hover { background:rgba(59,130,246,0.2); border-color:rgba(59,130,246,0.55); transform:none; }
+        .order-actions { display:flex; align-items:center; gap:5px; margin-left:auto; }
+
+        .empty-state { text-align:center; padding:30px 20px; color:var(--muted); font-size:13px; }
+        .empty-icon { font-size:28px; margin-bottom:8px; opacity:0.4; }
+
+        /* ── Confirm Modal ── */
+        .modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:1000; animation:fadeInOverlay 0.25s ease; }
+        .modal-overlay.show { display:flex; align-items:center; justify-content:center; }
+        @keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+        .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px; max-width:420px; width:90%; animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1); box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .modal-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:600; margin-bottom:16px; color:var(--text); }
+        .modal-content { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px; max-height:300px; overflow-y:auto; }
+        .modal-section { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+        .modal-section:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+        .modal-label { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:4px; }
+        .modal-value { font-size:13px; font-weight:500; color:var(--text); }
+        .modal-items { font-size:12px; color:var(--muted2); line-height:1.6; }
+        .modal-buttons { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+        .modal-btn { padding:10px 14px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.2s; width:100%; }
+        .modal-btn-cancel { background:var(--surface2); color:var(--muted2); border:1px solid var(--border); }
+        .modal-btn-cancel:hover { background:var(--surface3); color:var(--text); }
+        .modal-btn-draft { background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.3); }
+        .modal-btn-draft:hover { background:rgba(59,130,246,0.25); border-color:rgba(59,130,246,0.5); }
+        .modal-btn-confirm { background:var(--accent); color:#0a0c10; font-weight:600; border:none; }
+        .modal-btn-confirm:hover { background:var(--accent2); box-shadow:0 4px 16px rgba(232,160,32,0.3); }
+        .modal-btn:active { transform:scale(0.98); }
+
+        /* ── EDIT ORDER MODAL ── */
+        .edit-modal-overlay {
+            display: none; position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.68);
+            backdrop-filter: blur(6px);
+            z-index: 1100;
+        }
+        .edit-modal-overlay.show { display:flex; align-items:center; justify-content:center; animation:fadeInOverlay 0.25s ease; }
+        .edit-modal-box {
+            background: var(--surface);
+            border: 1px solid rgba(59,130,246,0.22);
+            border-radius: 16px; padding: 28px;
+            max-width: 500px; width: 94%;
+            animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.08);
+        }
+        .edit-modal-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
+        .edit-modal-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:600; }
+        .edit-modal-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+        .edit-modal-badge { font-size:11px; font-weight:600; padding:4px 12px; border-radius:20px; border:1px solid; }
+        .edit-section-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); margin-bottom:8px; }
+        .edit-divider { height:1px; background:var(--border); margin:16px 0; }
+        .edit-items-list { list-style:none; display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto; }
+        .edit-items-list::-webkit-scrollbar{width:3px}.edit-items-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+        .edit-item-row { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; transition:border-color 0.2s; }
+        .edit-item-row:hover { border-color:rgba(59,130,246,0.25); }
+        .edit-item-name { flex:1; font-size:13px; font-weight:500; }
+        .edit-qty-wrap { display:flex; align-items:center; gap:6px; }
+        .edit-qty-label { font-size:11px; color:var(--muted); }
+        .edit-item-qty-input { width:64px; padding:6px 10px; background:var(--surface3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; text-align:center; outline:none; transition:border-color 0.2s; }
+        .edit-item-qty-input:focus { border-color:rgba(59,130,246,0.5); box-shadow:0 0 0 3px rgba(59,130,246,0.08); }
+        .edit-remove-btn { background:transparent; border:1px solid rgba(239,68,68,0.25); color:var(--red); padding:5px 9px; border-radius:6px; font-size:11px; cursor:pointer; width:auto; transition:all 0.2s; }
+        .edit-remove-btn:hover { background:rgba(239,68,68,0.1); border-color:var(--red); }
+        .edit-add-row { display:flex; gap:8px; align-items:center; }
+        .edit-add-row select { flex:1; padding:9px 32px 9px 12px; font-size:12px; }
+        .edit-add-qty { width:76px !important; flex:0 0 76px !important; padding:9px 10px !important; font-size:12px !important; text-align:center; }
+        .edit-add-btn { background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.3); padding:9px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; width:auto; white-space:nowrap; transition:all 0.2s; }
+        .edit-add-btn:hover { background:rgba(59,130,246,0.25); border-color:rgba(59,130,246,0.5); }
+        .edit-modal-footer { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }
+        .edit-btn-cancel { background:var(--surface2); color:var(--muted2); border:1px solid var(--border); padding:11px 16px; border-radius:8px; font-size:13px; cursor:pointer; transition:all 0.2s; }
+        .edit-btn-cancel:hover { background:var(--surface3); color:var(--text); }
+        .edit-btn-save { background:var(--blue); color:#fff; border:none; padding:11px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+        .edit-btn-save:hover { background:#5b9df8; box-shadow:0 4px 16px rgba(59,130,246,0.35); }
+        .edit-empty { text-align:center; padding:20px; color:var(--muted); font-size:13px; }
+
+        /* ── Toast ── */
+        .toast-container { position:fixed; bottom:32px; right:32px; z-index:2000; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+        .order-header { display:flex; justify-content:space-between; padding:8px 14px; font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); border-bottom:1px solid var(--border); margin-bottom:6px; }
+        .order-header span{flex:1}.order-header span:nth-child(1){text-align:left}.order-header span:nth-child(2){text-align:center}.order-header span:nth-child(3){text-align:right}
+        .toast { display:flex; align-items:center; gap:10px; background:var(--surface2); border:1px solid var(--border); border-left:3px solid var(--green); color:var(--text); padding:12px 18px; border-radius:8px; font-size:13px; font-weight:500; min-width:220px; box-shadow:0 8px 32px rgba(0,0,0,0.4); opacity:0; transform:translateY(16px); transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1); pointer-events:none; }
+        .toast.show { opacity:1; transform:translateY(0); }
+        .toast.error { border-left-color:var(--red); }
+        .toast-dot { width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0; }
+        .toast.error .toast-dot { background:var(--red); }
+        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        @media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.main{padding:24px 20px}.header{padding:0 20px}}
+    </style>
+</head>
+<body>
+
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+<header class="header">
+    <div class="logo">
+        <div class="logo-icon">⚙</div>
+        YS <span>SPARE</span> PARTS
+    </div>
+    <div class="header-right">
+        <span class="header-time" id="headerTime"></span>
+        <div class="status-dot" title="System Online"></div>
+    </div>
+</header>
+
+<main class="main">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Order <span>Dashboard</span></div>
+            <div class="page-subtitle">Manage inventory, dealers and orders in one place</div>
+        </div>
+        <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">Total Products</div>
+            <div class="stat-value accent" id="totalProducts">—</div>
+            <div class="stat-icon">📦</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value" id="totalOrders">—</div>
+            <div class="stat-icon">🧾</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Cart Items</div>
+            <div class="stat-value" id="totalCart">0</div>
+            <div class="stat-icon">🛒</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Status</div>
+            <div class="stat-value" style="font-size:16px;color:var(--green);padding-top:8px;">Online</div>
+            <div class="stat-icon">✅</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Available Products</span>
+                <span class="panel-badge" id="productBadge">Loading…</span>
+            </div>
+            <div class="panel-body">
+                <ul class="product-list" id="productList">
+                    <div class="empty-state"><div class="empty-icon">📦</div>Loading products…</div>
+                </ul>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Create Order</span>
+                <span class="panel-badge">New</span>
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="form-label">Dealer</label>
+                    <select id="dealerSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Product</label>
+                    <select id="productSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input id="quantity" type="number" min="1" placeholder="Enter quantity">
+                </div>
+                <div style="margin-top:6px;">
+                    <button class="btn-primary" onclick="addToDraft()" style="width:100%;">+ Add to Cart</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Cart</span>
+                <span class="panel-badge" id="cartBadge">Empty</span>
+            </div>
+            <div class="panel-body">
+                <ul class="item-list" id="draftList">
+                    <div class="empty-state"><div class="empty-icon">🛒</div>No items in cart</div>
+                </ul>
+                <div class="btn-row" style="margin-top:32px;">
+                    <button class="btn-secondary" onclick="clearCart()">Clear Cart</button>
+                    <button class="btn-primary" onclick="createOrder()">Create Order</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Recent Orders</span>
+                <span class="panel-badge" id="orderBadge">Loading…</span>
+            </div>
+            <div class="panel-body">
+                <div class="order-header">
+                    <span>Order ID</span>
+                    <span>Status</span>
+                    <span>Actions</span>
+                </div>
+                <ul class="item-list" id="orderList">
+                    <div class="empty-state"><div class="empty-icon">🧾</div>Loading orders…</div>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Order Confirmation Modal -->
+<div class="modal-overlay" id="orderModal">
+    <div class="modal-box">
+        <div class="modal-title">Order Preview</div>
+        <div class="modal-content">
+            <div class="modal-section">
+                <div class="modal-label">Dealer</div>
+                <div class="modal-value" id="modalDealer">—</div>
+            </div>
+            <div class="modal-section">
+                <div class="modal-label">Items</div>
+                <div class="modal-items" id="modalItems">—</div>
+            </div>
+            <div class="modal-section">
+                <div class="modal-label">Created At</div>
+                <div class="modal-value" id="modalCreatedAt">—</div>
+            </div>
+        </div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeOrderModal()">Cancel</button>
+            <button class="modal-btn modal-btn-draft" onclick="saveDraftOrder()">Draft</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmOrder()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Order Modal -->
+<div class="edit-modal-overlay" id="editOrderModal">
+    <div class="edit-modal-box">
+        <div class="edit-modal-head">
+            <div>
+                <div class="edit-modal-title">✏️ Edit Order</div>
+                <div class="edit-modal-sub" id="editModalSub">Modify items and quantities</div>
+            </div>
+            <span class="edit-modal-badge" id="editModalBadge">draft</span>
+        </div>
+
+        <div class="edit-section-label">Current Items</div>
+        <ul class="edit-items-list" id="editItemsList">
+            <div class="edit-empty">No items</div>
+        </ul>
+
+        <div class="edit-divider"></div>
+
+        <div class="edit-section-label">Add New Item</div>
+        <div class="edit-add-row">
+            <select id="editProductSelect"></select>
+            <input class="edit-add-qty" id="editAddQty" type="number" min="1" placeholder="Qty">
+            <button class="edit-add-btn" onclick="editAddItem()">+ Add</button>
+        </div>
+
+        <div class="edit-modal-footer">
+            <button class="edit-btn-cancel" onclick="closeEditModal()">Cancel</button>
+            <button class="edit-btn-save" onclick="saveEditOrder()">💾 Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const PRODUCT_API = "http://127.0.0.1:8000/api/products/";
+const DEALER_API  = "http://127.0.0.1:8000/api/dealers/";
+const ORDER_API   = "http://127.0.0.1:8000/api/orders/";
+
+let draftCart = [];
+let productMap = {};
+let currentOrderId = null;
+let currentDealerId = null;
+
+// Edit modal state
+let editOrderId = null;
+let editOrderStatus = null;
+let editItems = [];
+
+function getCookie(name) {
+    let v = null;
+    if (document.cookie && document.cookie !== '') {
+        for (const c of document.cookie.split(';')) {
+            const t = c.trim();
+            if (t.substring(0, name.length + 1) === (name + '=')) {
+                v = decodeURIComponent(t.substring(name.length + 1)); break;
+            }
+        }
+    }
+    return v;
+}
+function csrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken') || '';
+}
+
+function updateClock() {
+    document.getElementById("headerTime").textContent =
+        new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+setInterval(updateClock, 1000); updateClock();
+
+function showToast(msg, type="success") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = "toast" + (type==="error" ? " error" : "");
+    toast.innerHTML = `<div class="toast-dot"></div>${msg}`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add("show")));
+    setTimeout(() => { toast.classList.remove("show"); setTimeout(() => toast.remove(), 400); }, 3000);
+}
+
+function loadProducts() {
+    fetch(PRODUCT_API).then(r=>r.json()).then(data => {
+        productMap = {};
+        const list = document.getElementById("productList");
+        const sel  = document.getElementById("productSelect");
+        const esel = document.getElementById("editProductSelect");
+        list.innerHTML = ""; sel.innerHTML = ""; esel.innerHTML = "";
+        if (!data.length) {
+            list.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div>No products found</div>';
+        }
+        data.forEach(p => {
+            productMap[p.id] = p.name;
+            const li = document.createElement("li"); li.className = "product-item";
+            li.innerHTML = `<span class="product-name">${p.name}</span><span class="product-price">₹${Number(p.price).toLocaleString('en-IN')}</span>`;
+            list.appendChild(li);
+            [sel, esel].forEach(s => {
+                const o = document.createElement("option"); o.value = p.id; o.text = p.name; s.appendChild(o);
+            });
+        });
+        document.getElementById("totalProducts").textContent = data.length;
+        document.getElementById("productBadge").textContent  = `${data.length} items`;
+    }).catch(() => {
+        document.getElementById("productList").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div>Could not load products</div>';
+        showToast("Failed to load products", "error");
+    });
+}
+
+function loadDealers() {
+    fetch(DEALER_API).then(r=>r.json()).then(data => {
+        const sel = document.getElementById("dealerSelect"); sel.innerHTML = "";
+        data.forEach(d => { const o = document.createElement("option"); o.value = d.id; o.text = d.name; sel.appendChild(o); });
+    }).catch(() => showToast("Failed to load dealers", "error"));
+}
+
+function addToDraft() {
+    const productId   = document.getElementById("productSelect").value;
+    const productName = document.getElementById("productSelect").selectedOptions[0]?.text || `Product #${productId}`;
+    const qty = document.getElementById("quantity").value.trim();
+    
+    // Check if product already in cart
+    if (draftCart.some(item => item.product == productId)) {
+        showToast(`${productName} is already in cart`, "error");
+        return;
+    }
+    
+    if (!qty || isNaN(qty) || Number(qty) < 1) { 
+        showToast("Please enter a valid quantity", "error"); 
+        return; 
+    }
+    
+    draftCart.push({ product: productId, name: productName, quantity: qty });
+    document.getElementById("quantity").value = "";
+    renderDraft(); 
+    updateProductDropdown();
+    showToast(`${productName} added to cart`);
+}
+
+function updateProductDropdown() {
+    const select = document.getElementById("productSelect");
+    const addedProductIds = new Set(draftCart.map(item => item.product));
+    
+    // Update option visibility
+    for (let option of select.options) {
+        if (option.value) {
+            option.disabled = addedProductIds.has(option.value);
+        }
+    }
+}
+
+function renderDraft() {
+    const list = document.getElementById("draftList"); 
+    list.innerHTML = "";
+    if (!draftCart.length) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div>No items in cart</div>';
+        document.getElementById("cartBadge").textContent = "Empty";
+        document.getElementById("totalCart").textContent = "0"; 
+        return;
+    }
+    draftCart.forEach((item, i) => {
+        const li = document.createElement("li"); 
+        li.className = "cart-item";
+        li.innerHTML = `
+            <div class="cart-item-info">
+                <span class="cart-item-name">${item.name}</span>
+                <span class="cart-item-qty">Qty: ${item.quantity}</span>
+            </div>
+            <button class="delete-btn" onclick="removeDraft(${i})">Remove</button>`;
+        list.appendChild(li);
+    });
+    document.getElementById("cartBadge").textContent = `${draftCart.length} item${draftCart.length > 1 ? "s" : ""}`;
+    document.getElementById("totalCart").textContent  = draftCart.length;
+}
+
+function removeDraft(i) { 
+    const n = draftCart[i].name; 
+    draftCart.splice(i, 1); 
+    renderDraft(); 
+    updateProductDropdown();
+    showToast(`${n} removed from cart`); 
+}
+function clearCart() { 
+    draftCart = []; 
+    renderDraft(); 
+    updateProductDropdown();
+    showToast("Cart cleared"); 
+}
+
+function createOrder() {
+    if (!draftCart.length) { showToast("Cart is empty — add items first", "error"); return; }
+    currentDealerId = document.getElementById("dealerSelect").value;
+    const dealerName = document.getElementById("dealerSelect").selectedOptions[0]?.text || "Unknown Dealer";
+    document.getElementById("modalDealer").textContent   = dealerName;
+    document.getElementById("modalItems").innerHTML      = draftCart.map(i => `<div>• ${i.name} × ${i.quantity}</div>`).join("");
+    document.getElementById("modalCreatedAt").textContent = new Date().toLocaleString('en-IN', { dateStyle:'short', timeStyle:'short' });
+    document.getElementById("orderModal").classList.add("show");
+}
+function closeOrderModal() { document.getElementById("orderModal").classList.remove("show"); currentOrderId = null; currentDealerId = null; }
+
+function saveDraftOrder() {
+    if (!draftCart.length || !currentDealerId) { showToast("Order data missing", "error"); return; }
+    fetch(ORDER_API, { method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken()}, body:JSON.stringify({ dealer:currentDealerId, items:draftCart }) })
+        .then(r=>r.json())
+        .then(() => { showToast("Order saved as draft"); draftCart = []; renderDraft(); updateProductDropdown(); loadOrders(); closeOrderModal(); })
+        .catch(() => showToast("Failed to save draft order", "error"));
+}
+
+function confirmOrder() {
+    if (!draftCart.length || !currentDealerId) { showToast("Order data missing", "error"); return; }
+    fetch(ORDER_API, { method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken()}, body:JSON.stringify({ dealer:currentDealerId, items:draftCart }) })
+        .then(r=>r.json())
+        .then(data => fetch(`${ORDER_API}${data.id}/confirm/`, { method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken()}, body:JSON.stringify({}) })
+            .then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error || "Failed"); }); return r.json(); }))
+        .then(() => { showToast("Order confirmed successfully"); draftCart = []; renderDraft(); updateProductDropdown(); loadOrders(); closeOrderModal(); })
+        .catch(err => showToast(formatErrorMessage(err.message), "error"));
+}
+
+/* ── Recent Orders ── */
+function loadOrders() {
+    fetch(ORDER_API).then(r=>r.json()).then(data => {
+        const list = document.getElementById("orderList"); list.innerHTML = "";
+        if (!data.length) {
+            list.innerHTML = '<div class="empty-state"><div class="empty-icon">🧾</div>No orders yet</div>';
+            document.getElementById("totalOrders").textContent = "0";
+            document.getElementById("orderBadge").textContent  = "None"; return;
+        }
+        data.slice().reverse().forEach(o => {
+            const li = document.createElement("li"); li.className = "order-item";
+            const statusClass = o.status === 'draft' ? 'draft' : o.status === 'confirmed' ? 'confirmed' : '';
+
+            let mainBtn = '';
+            if (o.status === 'draft')          mainBtn = `<button class="order-confirm-btn"  onclick="quickConfirmOrder(${o.id})">Confirm</button>`;
+            else if (o.status === 'confirmed') mainBtn = `<button class="order-deliver-btn"  onclick="quickDeliverOrder(${o.id})">Deliver</button>`;
+
+            // ✏️ Edit button — visible for draft and confirmed orders
+            const canEdit = (o.status === 'draft' || o.status === 'confirmed');
+            const editBtn = canEdit
+                ? `<button class="order-edit-btn" onclick="openEditModal(${o.id}, '${o.status}')">✏️ Edit</button>`
+                : '';
+
+            li.innerHTML = `
+                <span class="order-num">#${String(o.id).padStart(4, "0")}</span>
+                <span class="order-status ${statusClass}">${o.status}</span>
+                <div class="order-actions">${editBtn}${mainBtn}</div>`;
+            list.appendChild(li);
+        });
+        document.getElementById("totalOrders").textContent = data.length;
+        document.getElementById("orderBadge").textContent  = `${data.length} total`;
+    }).catch(() => {
+        document.getElementById("orderList").innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div>Could not load orders</div>';
+        showToast("Failed to load orders", "error");
+    });
+}
+
+function quickConfirmOrder(orderId) {
+    fetch(`${ORDER_API}${orderId}/confirm/`, { method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken()}, body:JSON.stringify({}) })
+        .then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error || "Failed"); }); return r.json(); })
+        .then(() => { showToast("Order confirmed successfully"); loadOrders(); })
+        .catch(err => showToast(formatErrorMessage(err.message), "error"));
+}
+function quickDeliverOrder(orderId) {
+    fetch(`${ORDER_API}${orderId}/deliver/`, { method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken()}, body:JSON.stringify({}) })
+        .then(r => { if (!r.ok) return r.json().then(e => { throw new Error(e.error || "Failed"); }); return r.json(); })
+        .then(() => { showToast("Order delivered successfully"); loadOrders(); })
+        .catch(err => showToast(formatErrorMessage(err.message), "error"));
+}
+
+/* ── Edit Order Modal ── */
+function openEditModal(orderId, status) {
+    editOrderId = orderId;
+    editOrderStatus = status;
+
+    document.getElementById("editModalSub").textContent =
+        `Order #${String(orderId).padStart(4, "0")} · ${status}`;
+
+    const badge = document.getElementById("editModalBadge");
+    badge.textContent = status;
+
+    fetch(`${ORDER_API}${orderId}/`)
+        .then(r => r.json())
+        .then(order => {
+
+            // ✅ store dealer id for update
+            currentDealerId = order.dealer;
+
+            editItems = (order.items || []).map(i => ({
+                product: String(i.product),
+                name: i.product_name || productMap[i.product] || `Product #${i.product}`,
+                quantity: String(i.quantity)
+            }));
+
+            renderEditItems();
+            updateEditProductDropdown();
+
+            document.getElementById("editOrderModal").classList.add("show");
+        })
+        .catch(() => {
+            showToast("Could not load order details", "error");
+        });
+}
+function renderEditItems() {
+    const list = document.getElementById("editItemsList"); list.innerHTML = "";
+    if (!editItems.length) { list.innerHTML = '<div class="edit-empty">No items — add below</div>'; return; }
+    editItems.forEach((item, i) => {
+        const li = document.createElement("li"); li.className = "edit-item-row";
+        li.innerHTML = `
+            <span class="edit-item-name">${item.name}</span>
+            <div class="edit-qty-wrap">
+                <span class="edit-qty-label">Qty</span>
+                <input class="edit-item-qty-input" type="number" min="1" value="${item.quantity}"
+                       onchange="editItems[${i}].quantity = this.value">
+            </div>
+            <button class="edit-remove-btn" onclick="editRemoveItem(${i})">✕</button>`;
+        list.appendChild(li);
+    });
+}
+
+function editRemoveItem(i) {
+    const n = editItems[i].name; editItems.splice(i, 1); renderEditItems(); showToast(`${n} removed`);
+}
+
+function editAddItem() {
+    const sel = document.getElementById("editProductSelect");
+    const productId   = sel.value;
+    const productName = sel.selectedOptions[0]?.text || `Product #${productId}`;
+    const qty = document.getElementById("editAddQty").value.trim();
+    
+    if (!qty || isNaN(qty) || Number(qty) < 1) { 
+        showToast("Enter a valid quantity", "error"); 
+        return; 
+    }
+    
+    const existing = editItems.find(i => i.product === String(productId));
+    if (existing) {
+        showToast(`${productName} is already in order`, "error");
+        return;
+    }
+    
+    editItems.push({ product: String(productId), name: productName, quantity: qty });
+    renderEditItems(); 
+    updateEditProductDropdown();
+    showToast(`${productName} added`);
+    document.getElementById("editAddQty").value = "";
+}
+
+function updateEditProductDropdown() {
+    const select = document.getElementById("editProductSelect");
+    const addedProductIds = new Set(editItems.map(item => item.product));
+    
+    // Update option visibility
+    for (let option of select.options) {
+        if (option.value) {
+            option.disabled = addedProductIds.has(option.value);
+        }
+    }
+}
+
+function saveEditOrder() {
+
+    if (!editItems.length) {
+        showToast("Cannot save an empty order", "error");
+        return;
+    }
+
+    const payload = {
+        dealer: currentDealerId,
+        items: editItems.map(i => ({
+            product: Number(i.product),
+            quantity: Number(i.quantity)
+        }))
+    };
+
+    fetch(`${ORDER_API}${editOrderId}/`, {
+        method: "PATCH",  
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken()
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(JSON.stringify(data));
+        return data;
+    })
+    .then(() => {
+        showToast(`Order #${String(editOrderId).padStart(4,"0")} updated`);
+        loadOrders();
+        closeEditModal();
+    })
+    .catch(err => showToast(formatErrorMessage(err.message), "error"));
+}
+
+function closeEditModal() {
+    document.getElementById("editOrderModal").classList.remove("show");
+    editOrderId = null; editOrderStatus = null; editItems = [];
+}
+
+// Close edit modal on backdrop click
+document.getElementById("editOrderModal").addEventListener("click", function(e) {
+    if (e.target === this) closeEditModal();
+});
+
+function formatErrorMessage(raw) {
+    if (!raw) return "Something went wrong. Please try again.";
+    let msg = raw;
+    try { const p = typeof raw === "string" ? JSON.parse(raw) : raw; msg = p.message || p.error || p.detail || raw; } catch(e) { msg = raw; }
+    return `❌ ${String(msg).replace(/^\[|\]$/g,'').replace(/^['"]|['"]$/g,'').trim()}`;
+}
+
+function refreshAll() { loadProducts(); loadDealers(); loadOrders(); showToast("Dashboard refreshed"); }
+
+loadProducts(); loadDealers(); loadOrders();
+</script>
+</body>
+</html>
